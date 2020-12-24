@@ -4,7 +4,7 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
   this.scoreManager = new ScoreManager;
   this.actuator     = new Actuator;
 
-  this.startTiles   = 2;
+  this.startTiles   = 4;
 
   this.inputManager.on("move", this.move.bind(this));
   this.inputManager.on("restart", this.restart.bind(this));
@@ -38,6 +38,7 @@ GameManager.prototype.setup = function () {
   this.grid        = new Grid(this.size);
 
   this.score       = 0;
+  this.largest     = 1;
   this.over        = false;
   this.won         = false;
   this.keepPlaying = false;
@@ -59,7 +60,12 @@ GameManager.prototype.addStartTiles = function () {
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
-    var value = Math.random() < 0.5 ? Math.random() < 0.9 ? 2 : 4 : Math.random() < 0.9 ? -2 : -4;
+    //var value = Math.random() < 0.9 ? 2 : 4;
+    var value = 1;
+    while (value < this.largest && Math.random() < 1/5) {
+      value = value + 1;
+    }
+    
     var tile = new Tile(this.grid.randomAvailableCell(), value);
 
     this.grid.insertTile(tile);
@@ -127,7 +133,7 @@ GameManager.prototype.move = function (direction) {
 
         // Only one merger per row traversal?
         if (next && next.value === tile.value && !next.mergedFrom) {
-          var merged = new Tile(positions.next, tile.value * 2);
+          var merged = new Tile(positions.next, tile.value + 1);
           merged.mergedFrom = [tile, next];
 
           self.grid.insertTile(merged);
@@ -138,9 +144,12 @@ GameManager.prototype.move = function (direction) {
 
           // Update the score
           self.score += merged.value;
+          if (merged.value > self.largest) {
+            self.largest = merged.value;
+          }
 
-          // The mighty 2048 tile
-          if (merged.value === -512) self.won = true;
+          // The mighty 22 tile
+          if (merged.value === 22) self.won = true;
         } else {
           self.moveTile(tile, positions.farthest);
         }
@@ -154,6 +163,7 @@ GameManager.prototype.move = function (direction) {
 
   if (moved) {
     this.addRandomTile();
+	this.addRandomTile();
 
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
